@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
 import { calculatePoints, PARTICIPANTS } from '@/lib/studyUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Rocket, Loader2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 
 const SUBJECTS = [
   'Constitucional', 'Administrativo', 'Penal', 'Civil', 'Processo Civil',
@@ -32,49 +32,128 @@ export default function StudyForm({ onSuccess }) {
   const a = parseFloat(accuracy) || 0;
   const previewPoints = q > 0 && a > 0 ? calculatePoints(q, a) : null;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!participant || !questions || !accuracy || !subject) {
-      toast({ title: '⚠️ Preencha todos os campos', variant: 'destructive' });
-      return;
-    }
-    if (q < 1 || a < 0 || a > 100) {
-      toast({ title: '⚠️ Valores inválidos', variant: 'destructive' });
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    setLoading(true);
-    let screenshotUrl = '';
-    if (file) {
-      const result = await base44.integrations.Core.UploadFile({ file });
-      screenshotUrl = result.file_url;
-    }
-
-    const points = calculatePoints(q, a);
-    await base44.entities.StudyEntry.create({
-      participant,
-      questions: q,
-      accuracy: a,
-      subject,
-      screenshot_url: screenshotUrl,
-      points_earned: points,
-      study_date: format(new Date(), 'yyyy-MM-dd')
+  if (!participant || !questions || !accuracy || !subject) {
+    toast({
+      title: '⚠️ Preencha todos os campos',
+      variant: 'destructive'
     });
+    return;
+  }
+
+  if (q < 1 || a < 0 || a > 100) {
+    toast({
+      title: '⚠️ Valores inválidos',
+      variant: 'destructive'
+    });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    let imageUrl = null;
+
+    // UPLOAD DA IMAGEM
+    if (file) {
+        const sanitizedName = file.name
+            .replace(/\s/g, '-')
+            .replace(/[^\w.-]/g, '');
+
+        const fileName =
+            Date.now() + '-' + sanitizedName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('study-prints')
+        .upload(fileName, file, {
+            upsert: true
+            });
+
+      if (uploadError) {
+        console.error(uploadError);
+
+        toast({
+          title: 'Erro ao enviar imagem',
+          description: uploadError.message,
+          variant: 'destructive'
+        });
+
+        setLoading(false);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from('study-prints')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicData.publicUrl;
+    }
+
+    // CALCULAR PONTOS
+    const points = calculatePoints(q, a);
+
+    // INSERT NO BANCO
+    const { data, error } = await supabase
+      .from('study_entries')
+      .insert([
+        {
+          participant,
+          questions: q,
+          accuracy: a,
+          subject,
+          points,
+          image_url: imageUrl
+        }
+      ])
+      .select();
+
+    console.log('INSERT DATA:', data);
+    console.log('INSERT ERROR:', error);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive'
+      });
+
+      console.error(error);
+
+      setLoading(false);
+      return;
+    }
 
     toast({
       title: `🚀 +${points} pontos para ${participant}!`,
       description: `${q} questões em ${subject} com ${a}% de acertos`
     });
 
+    // RESET FORM
     setParticipant('');
     setQuestions('');
     setAccuracy('');
     setSubject('');
     setFile(null);
-    setLoading(false);
-    setOpen(false);
+    setPreview(null);
+
     onSuccess?.();
-  };
+
+    setOpen(false);
+
+  } catch (err) {
+    console.error(err);
+
+    toast({
+      title: 'Erro inesperado',
+      description: err.message,
+      variant: 'destructive'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <motion.section

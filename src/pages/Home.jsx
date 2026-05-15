@@ -1,4 +1,3 @@
-import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getRanking, PARTICIPANTS } from '@/lib/studyUtils';
 import HeroHeader from '@/components/projeto/HeroHeader.jsx';
@@ -7,13 +6,23 @@ import PlayerColumn from '@/components/projeto/PlayerColumn.jsx';
 import StudyForm from '@/components/projeto/StudyForm.jsx';
 import ActivityFeed from '@/components/projeto/ActivityFeed.jsx';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const queryClient = useQueryClient();
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['studyEntries'],
-    queryFn: () => base44.entities.StudyEntry.list('-created_date', 500),
+    queryFn: async () => {
+    const { data, error } = await supabase
+        .from('study_entries')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return data
+    },
   });
 
   const ranking = getRanking(entries);
