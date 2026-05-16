@@ -102,42 +102,35 @@ const handleSubmit = async (e) => {
   setLoading(true);
 
   try {
-    let imageUrl = null;
+    const fileExt =
+      file.name.split('.').pop();
 
-    // UPLOAD DA IMAGEM
-    if (file) {
-        const sanitizedName = file.name
-            .replace(/\s/g, '-')
-            .replace(/[^\w.-]/g, '');
+    const fileName =
+      `${participant}-${Date.now()}.${fileExt}`;
 
-        const fileName =
-            Date.now() + '-' + sanitizedName;
+    const filePath =
+      `proofs/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('study-prints')
-        .upload(fileName, file, {
-            upsert: true
-            });
+    const { error: uploadError } =
+      await supabase.storage
+        .from('study-proofs')
+        .upload(
+          filePath,
+          file
+        );
 
-      if (uploadError) {
-        console.error(uploadError);
-
-        toast({
-          title: 'Erro ao enviar imagem',
-          description: uploadError.message,
-          variant: 'destructive'
-        });
-
-        setLoading(false);
-        return;
-      }
-
-      const { data: publicData } = supabase.storage
-        .from('study-prints')
-        .getPublicUrl(fileName);
-
-      imageUrl = publicData.publicUrl;
+    if (uploadError) {
+      throw uploadError;
     }
+
+    const {
+      data: publicUrlData,
+    } = supabase.storage
+      .from('study-proofs')
+      .getPublicUrl(filePath);
+
+    const imageUrl =
+      publicUrlData.publicUrl;
 
     // CALCULAR PONTOS
     const points = calculatePoints(q, a);

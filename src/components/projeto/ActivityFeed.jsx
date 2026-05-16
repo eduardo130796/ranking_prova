@@ -51,7 +51,35 @@ export default function ActivityFeed({ entries }) {
                     <p className="text-sm leading-relaxed">
                       {item.text}
                     </p>
+                    {item.image_url && (
+                      <div className="mt-2">
+                        <img
+                          src={item.image_url}
+                          alt="Comprovante"
+                          loading="lazy"
+                          className="
+                            rounded-lg
+                            border
+                            border-border/60
+                            w-32
+                            max-h-32
+                            object-cover
+                            cursor-pointer
+                            hover:scale-[1.02]
+                            hover:opacity-90
+                            transition-all
+                          "
+                          onClick={() =>
+                            window.open(
+                              item.image_url,
+                              '_blank'
+                            )
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[11px] text-muted-foreground">
                       {moment(item.date).fromNow()}
@@ -65,6 +93,7 @@ export default function ActivityFeed({ entries }) {
                         +{item.points} pts
                       </span>
                     )}
+                 
                   </div>
                 </div>
               </motion.div>

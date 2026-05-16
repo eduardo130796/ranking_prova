@@ -20,7 +20,7 @@ export const AVATARS = {
 };
 
 export const CHALLENGE_START =
-  '2026-05-20';
+  '2026-05-18';
 
 export const EXAM_DATE =
   '2026-09-09';
@@ -809,6 +809,7 @@ export function generateActivityFeed(
           entry.created_at,
 
         points: pts,
+        image_url: entry.image_url,
       };
     });
 }
