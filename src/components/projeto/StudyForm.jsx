@@ -10,11 +10,47 @@ import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 
-const SUBJECTS = [
-  'Constitucional', 'Administrativo', 'Penal', 'Civil', 'Processo Civil',
-  'Processo Penal', 'Tributário', 'Trabalho', 'Empresarial', 'Ambiental',
-  'Português', 'Raciocínio Lógico', 'Informática', 'Direitos Humanos',
-  'Legislação', 'Outros'
+export const SUBJECTS = [
+  'Língua Portuguesa',
+  'Raciocínio Lógico',
+  'Informática',
+  'Atualidades',
+  'Lei Orgânica do DF',
+  'Realidade do DF',
+  'Ética no Serviço Público',
+
+  'Direito Constitucional',
+  'Direito Administrativo',
+  'Administração Pública',
+
+  'Administração Geral',
+  'Administração Financeira',
+  'Administração de Recursos Humanos',
+  'Administração de Materiais',
+  'Gestão de Pessoas',
+  'Gestão de Projetos',
+  'Gestão da Qualidade',
+  'Planejamento Estratégico',
+
+  'Arquivologia',
+  'Redação Oficial',
+
+  'AFO',
+  'Orçamento Público',
+
+  'Licitações',
+  'Contratos Administrativos',
+  'Lei 14.133',
+
+  'Assistência Social',
+  'Legislação da Assistência Social',
+
+  'Políticas Públicas',
+  'Serviço Social',
+  'Seguridade Social',
+
+  'Noções de Administração',
+  'Noções de Direito',
 ];
 
 export default function StudyForm({ onSuccess }) {
