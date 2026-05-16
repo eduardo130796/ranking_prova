@@ -6,8 +6,6 @@ import {
 } from '@/lib/studyUtils';
 import { motion } from 'framer-motion';
 
-import MyApprovalDashboard from '@/components/projeto/MyApprovalDashboard';
-
 import HeroHeader from '@/components/projeto/HeroHeader.jsx';
 
 import RankingBar from '@/components/projeto/RankingBar.jsx';
@@ -208,7 +206,6 @@ export default function Home() {
   // =====================
   // UI
   // =====================
-  console.log('RANKING:', ranking);
 
   const completedTopics =
     topics.filter(
@@ -226,31 +223,6 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 space-y-12">
 
-        {/* PREMIUM VIEW TOGGLE */}
-        <div className="flex justify-center">
-          <div className="inline-flex p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl premium-shadow">
-            <button
-              onClick={() => setActiveView('group')}
-              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${activeView === 'group'
-                  ? 'bg-white text-black shadow-xl scale-105'
-                  : 'text-white/40 hover:text-white/60'
-                }`}
-            >
-              <span className="text-lg">🔥</span>
-              Grupo
-            </button>
-            <button
-              onClick={() => setActiveView('approval')}
-              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${activeView === 'approval'
-                  ? 'bg-white text-black shadow-xl scale-105'
-                  : 'text-white/40 hover:text-white/60'
-                }`}
-            >
-              <span className="text-lg">📚</span>
-              Minha Aprovação
-            </button>
-          </div>
-        </div>
 
         {/* ========================= */}
         {/* VIEW: GRUPO */}
@@ -288,22 +260,6 @@ export default function Home() {
             <StudyForm onSuccess={handleRefresh} />
             <ActivityFeed entries={entries} />
           </motion.div>
-        )}
-
-        {/* ========================= */}
-        {/* VIEW: MINHA APROVAÇÃO */}
-        {/* ========================= */}
-        {activeView === 'approval' && (
-          <MyApprovalDashboard
-            subjects={topics}
-            reviews={reviews?.map(r => ({
-              ...r,
-              topic_name: r.topics?.name,
-            })) || []}
-            mockExams={mockExams}
-            entries={entries}
-            streak={ranking.find(p => p.name === 'Eduardo')?.streak || 0} // Assuming 'Eduardo' for personal stats for now, or could be dynamic
-          />
         )}
       </div>
     </div>

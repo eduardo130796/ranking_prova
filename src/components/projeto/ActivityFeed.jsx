@@ -49,16 +49,7 @@ export default function ActivityFeed({ entries }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm leading-relaxed">
-                      <span className="font-bold text-foreground">{AVATARS[item.participant]} {item.participant}</span>
-                      <span className="text-muted-foreground"> fez </span>
-                      <span className="font-semibold text-foreground">{item.questions} questões</span>
-                      <span className="text-muted-foreground"> em </span>
-                      <span className="text-primary font-medium">{item.subject}</span>
-                      {item.accuracy >= 80 && (
-                        <span className="ml-1 text-xs bg-emerald-400/10 text-emerald-400 px-1.5 py-0.5 rounded-full">
-                          🎯 {item.accuracy}%
-                        </span>
-                      )}
+                      {item.text}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 mt-1">

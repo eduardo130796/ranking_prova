@@ -27,7 +27,7 @@ export const EXAM_DATE =
 
 export const DAILY_GOAL = 30;
 
-export const WEEKLY_GOAL = 250;
+export const WEEKLY_GOAL = 350;
 
 export const INITIAL_FUND = 100;
 
@@ -395,8 +395,12 @@ export function getPlayerStats(
         participantFreeDays.find(
           freeDay =>
             freeDay.used &&
-            freeDay.used_date ===
-              dateStr
+            format(
+              new Date(
+                freeDay.used_date
+              ),
+              'yyyy-MM-dd'
+            ) === dateStr
         );
 
       if (
@@ -424,8 +428,12 @@ export function getPlayerStats(
       participantFreeDays.find(
         freeDay =>
           freeDay.used &&
-          freeDay.used_date ===
-            dateStr
+          format(
+            new Date(
+              freeDay.used_date
+            ),
+            'yyyy-MM-dd'
+          ) === dateStr
       );
 
     if (usedFreeDay) {
@@ -729,11 +737,6 @@ export function getRanking(
         ranking.length;
     }
   );
-console.log({
-  penalties,
-  freeDays,
-  ranking,
-});
   return ranking;
 }
 
@@ -792,6 +795,8 @@ export function generateActivityFeed(
         text:
           `${entry.participant} fez ${entry.questions} questões em ${
             entry.subject ||
+            entry.subject_name ||
+            entry.discipline ||
             'Matéria'
           } com ${
             entry.accuracy

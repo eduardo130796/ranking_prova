@@ -21,7 +21,7 @@ export default function StudyForm({ onSuccess }) {
   const [open, setOpen] = useState(false);
   const [participant, setParticipant] = useState('');
   const [questions, setQuestions] = useState('');
-  const [accuracy, setAccuracy] = useState('');
+  const [correctAnswers, setCorrectAnswers] = useState('');
   const [subject, setSubject] = useState('');
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,13 +29,21 @@ export default function StudyForm({ onSuccess }) {
   const { toast } = useToast();
 
   const q = parseInt(questions) || 0;
-  const a = parseFloat(accuracy) || 0;
+  const correct =
+  parseInt(correctAnswers) || 0;
+
+  const a =
+    q > 0
+      ? Math.round(
+          (correct / q) * 100
+        )
+      : 0;
   const previewPoints = q > 0 && a > 0 ? calculatePoints(q, a) : null;
 
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-  if (!participant || !questions || !accuracy || !subject) {
+  if (!participant || !questions || !correctAnswers || !subject) {
     toast({
       title: '⚠️ Preencha todos os campos',
       variant: 'destructive'
@@ -43,7 +51,11 @@ const handleSubmit = async (e) => {
     return;
   }
 
-  if (q < 1 || a < 0 || a > 100) {
+  if (
+    q < 1 ||
+    correct < 0 ||
+    correct > q
+  ) {
     toast({
       title: '⚠️ Valores inválidos',
       variant: 'destructive'
@@ -109,9 +121,85 @@ const handleSubmit = async (e) => {
       ])
       .select();
 
-    console.log('INSERT DATA:', data);
-    console.log('INSERT ERROR:', error);
+      // =====================================
+      // VERIFICAR FREE DAY SEMANAL
+      // =====================================
 
+      const start = new Date();
+      start.setDate(
+        start.getDate() - start.getDay() + 1
+      );
+
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+
+      // TOTAL SEMANAL
+      const { data: weeklyEntries } =
+        await supabase
+          .from('study_entries')
+          .select('questions')
+          .eq('participant', participant)
+          .gte(
+            'created_at',
+            start.toISOString()
+          )
+          .lte(
+            'created_at',
+            end.toISOString()
+          );
+
+      const totalWeekQuestions =
+        (weeklyEntries || []).reduce(
+          (sum, e) =>
+            sum + (e.questions || 0),
+          0
+        );
+
+      // META BATIDA
+      if (totalWeekQuestions >= 350) {
+
+        // VERIFICAR SE JÁ GANHOU NESSA SEMANA
+        const { data: existingFreeDay } =
+          await supabase
+            .from('free_days')
+            .select('id')
+            .eq(
+              'participant',
+              participant
+            )
+            .gte(
+              'earned_date',
+              start
+                .toISOString()
+                .split('T')[0]
+            )
+            .limit(1)
+            .maybeSingle();
+
+        // NÃO EXISTE -> CRIA
+        if (!existingFreeDay) {
+
+          await supabase
+            .from('free_days')
+            .insert([
+              {
+                participant,
+                used: false,
+                earned_date:
+                  new Date()
+                    .toISOString()
+                    .split('T')[0],
+              },
+            ]);
+
+          toast({
+            title:
+              '🎁 Dia Livre Conquistado!',
+            description:
+              `${participant} ganhou um dia livre por bater a meta semanal.`,
+          });
+        }
+      }
     if (error) {
       toast({
         title: 'Erro ao salvar',
@@ -133,7 +221,7 @@ const handleSubmit = async (e) => {
     // RESET FORM
     setParticipant('');
     setQuestions('');
-    setAccuracy('');
+    setCorrectAnswers('');
     setSubject('');
     setFile(null);
     setPreview(null);
@@ -223,18 +311,37 @@ const handleSubmit = async (e) => {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Acertos (%)</Label>
+               <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                    Acertos
+                  </Label>
+
                   <Input
                     type="number"
-                    placeholder="Ex: 75"
-                    value={accuracy}
-                    onChange={e => setAccuracy(e.target.value)}
+                    placeholder="Ex: 42"
+                    value={correctAnswers}
+                    onChange={e =>
+                      setCorrectAnswers(
+                        e.target.value
+                      )
+                    }
                     min={0}
-                    max={100}
+                    max={q || undefined}
                     className="bg-muted/40 border-border/60"
                   />
+
+                  {q > 0 && correct > q && (
+                    <p className="text-xs text-red-400">
+                      Acertos não podem ser maiores que o total de questões
+                    </p>
+                  )}
+                  {q > 0 && correct >= 0 && (
+                    <div className="text-xs text-primary font-semibold">
+                      Precisão calculada: {a}%
+                    </div>
+                  )}
                 </div>
+                
 
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Matéria</Label>
