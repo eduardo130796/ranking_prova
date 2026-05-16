@@ -1,0 +1,306 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { calculatePoints, PARTICIPANTS } from '@/lib/studyUtils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Rocket, Loader2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
+
+const SUBJECTS = [
+  'Constitucional', 'Administrativo', 'Penal', 'Civil', 'Processo Civil',
+  'Processo Penal', 'Tributário', 'Trabalho', 'Empresarial', 'Ambiental',
+  'Português', 'Raciocínio Lógico', 'Informática', 'Direitos Humanos',
+  'Legislação', 'Outros'
+];
+
+export default function StudyForm({ onSuccess }) {
+  const [open, setOpen] = useState(false);
+  const [participant, setParticipant] = useState('');
+  const [questions, setQuestions] = useState('');
+  const [accuracy, setAccuracy] = useState('');
+  const [subject, setSubject] = useState('');
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const { toast } = useToast();
+
+  const q = parseInt(questions) || 0;
+  const a = parseFloat(accuracy) || 0;
+  const previewPoints = q > 0 && a > 0 ? calculatePoints(q, a) : null;
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!participant || !questions || !accuracy || !subject) {
+    toast({
+      title: '⚠️ Preencha todos os campos',
+      variant: 'destructive'
+    });
+    return;
+  }
+
+  if (q < 1 || a < 0 || a > 100) {
+    toast({
+      title: '⚠️ Valores inválidos',
+      variant: 'destructive'
+    });
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    let imageUrl = null;
+
+    // UPLOAD DA IMAGEM
+    if (file) {
+        const sanitizedName = file.name
+            .replace(/\s/g, '-')
+            .replace(/[^\w.-]/g, '');
+
+        const fileName =
+            Date.now() + '-' + sanitizedName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('study-prints')
+        .upload(fileName, file, {
+            upsert: true
+            });
+
+      if (uploadError) {
+        console.error(uploadError);
+
+        toast({
+          title: 'Erro ao enviar imagem',
+          description: uploadError.message,
+          variant: 'destructive'
+        });
+
+        setLoading(false);
+        return;
+      }
+
+      const { data: publicData } = supabase.storage
+        .from('study-prints')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicData.publicUrl;
+    }
+
+    // CALCULAR PONTOS
+    const points = calculatePoints(q, a);
+
+    // INSERT NO BANCO
+    const { data, error } = await supabase
+      .from('study_entries')
+      .insert([
+        {
+          participant,
+          questions: q,
+          accuracy: a,
+          subject,
+          points,
+          image_url: imageUrl
+        }
+      ])
+      .select();
+
+    console.log('INSERT DATA:', data);
+    console.log('INSERT ERROR:', error);
+
+    if (error) {
+      toast({
+        title: 'Erro ao salvar',
+        description: error.message,
+        variant: 'destructive'
+      });
+
+      console.error(error);
+
+      setLoading(false);
+      return;
+    }
+
+    toast({
+      title: `🚀 +${points} pontos para ${participant}!`,
+      description: `${q} questões em ${subject} com ${a}% de acertos`
+    });
+
+    // RESET FORM
+    setParticipant('');
+    setQuestions('');
+    setAccuracy('');
+    setSubject('');
+    setFile(null);
+    setPreview(null);
+
+    onSuccess?.();
+
+    setOpen(false);
+
+  } catch (err) {
+    console.error(err);
+
+    toast({
+      title: 'Erro inesperado',
+      description: err.message,
+      variant: 'destructive'
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.4 }}
+      className="rounded-3xl border border-border bg-card overflow-hidden"
+    >
+      {/* Toggle header */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-6 py-5 hover:bg-muted/20 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center">
+            <Rocket className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-space font-bold text-lg">Registrar Estudo</h3>
+            <p className="text-xs text-muted-foreground">Registre seu progresso e ganhe pontos</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {previewPoints !== null && open && (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">
+              +{previewPoints} pts preview
+            </span>
+          )}
+          {open ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-6 border-t border-border/50 pt-5">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Participante</Label>
+                  <Select value={participant} onValueChange={setParticipant}>
+                    <SelectTrigger className="bg-muted/40 border-border/60">
+                      <SelectValue placeholder="Quem estudou?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PARTICIPANTS.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Questões</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 50"
+                    value={questions}
+                    onChange={e => setQuestions(e.target.value)}
+                    min={1}
+                    className="bg-muted/40 border-border/60"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Acertos (%)</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ex: 75"
+                    value={accuracy}
+                    onChange={e => setAccuracy(e.target.value)}
+                    min={0}
+                    max={100}
+                    className="bg-muted/40 border-border/60"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Matéria</Label>
+                  <Select value={subject} onValueChange={setSubject}>
+                    <SelectTrigger className="bg-muted/40 border-border/60">
+                      <SelectValue placeholder="Matéria estudada" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUBJECTS.map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Print (opcional)</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setFile(e.target.files[0])}
+                    className="cursor-pointer bg-muted/40 border-border/60"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90 text-white font-bold h-10 shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Rocket className="w-4 h-4 mr-2" />
+                    )}
+                    {loading ? 'Registrando...' : 'Registrar Estudo'}
+                  </Button>
+                </div>
+              </form>
+
+              {/* Points preview */}
+              {previewPoints !== null && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-4 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2"
+                >
+                  <span className="text-lg">✨</span>
+                  <span className="text-sm font-semibold text-primary">
+                    Você vai ganhar <strong>+{previewPoints} pontos</strong> com esse registro!
+                  </span>
+                </motion.div>
+              )}
+
+              <div className="mt-3 p-3 rounded-xl bg-muted/30 border border-border/40">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <strong>Pontuação:</strong> 30-49q=1pt · 50-79q=2pt · 80-119q=3pt · 120+q=5pt &nbsp;|&nbsp;
+                  <strong>Bônus:</strong> 70%=+1 · 80%=+2 · 90%=+3 &nbsp;|&nbsp;
+                  <strong>Penalidade:</strong> &lt;50%=-1pt
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
+  );
+}
