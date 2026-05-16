@@ -5,9 +5,17 @@ import AchievementBadge from './AchievementBadge';
 
 const medals = ['🥇', '🥈', '🥉'];
 
-export default function PlayerColumn({ participant, entries, rankPosition, delay = 0 }) {
-  const stats = getPlayerStats(entries, participant);
-  const achievements = getAchievements(entries, participant);
+export default function PlayerColumn({
+    player,
+    achievements,
+    rankPosition,
+    delay = 0,
+  }) {
+  const stats = player;
+
+
+  const participant =
+    player.name;
   const isLeader = rankPosition === 0;
   const hasNotStudied = !stats.studiedToday;
 

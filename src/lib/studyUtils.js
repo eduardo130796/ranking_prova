@@ -7,7 +7,11 @@ import {
   isWithinInterval,
 } from 'date-fns';
 
-export const PARTICIPANTS = ['Eduardo', 'Isabela', 'Luiza'];
+export const PARTICIPANTS = [
+  'Eduardo',
+  'Isabela',
+  'Luiza',
+];
 
 export const AVATARS = {
   Eduardo: '🦁',
@@ -15,11 +19,16 @@ export const AVATARS = {
   Luiza: '🦊',
 };
 
-export const CHALLENGE_START = '2025-05-01';
-export const EXAM_DATE = '2025-09-28';
+export const CHALLENGE_START =
+  '2026-05-20';
+
+export const EXAM_DATE =
+  '2026-09-09';
 
 export const DAILY_GOAL = 30;
-export const WEEKLY_GOAL = 350;
+
+export const WEEKLY_GOAL = 250;
+
 export const INITIAL_FUND = 100;
 
 export const MOTIVATIONAL_QUOTES = [
@@ -89,14 +98,19 @@ export function getLevel(points) {
     }
   }
 
-  const nextLevel = LEVELS[LEVELS.indexOf(level) + 1];
+  const nextLevel =
+    LEVELS[
+      LEVELS.indexOf(level) + 1
+    ];
 
   const progress = nextLevel
     ? Math.min(
         100,
         Math.round(
-          ((points - level.minPoints) /
-            (nextLevel.minPoints - level.minPoints)) *
+          ((points -
+            level.minPoints) /
+            (nextLevel.minPoints -
+              level.minPoints)) *
             100
         )
       )
@@ -109,18 +123,33 @@ export function getLevel(points) {
   };
 }
 
-export function calculatePoints(questions, accuracy) {
+export function calculatePoints(
+  questions,
+  accuracy
+) {
   let points = 0;
 
-  if (questions >= 120) points = 5;
-  else if (questions >= 80) points = 3;
-  else if (questions >= 50) points = 2;
-  else if (questions >= 30) points = 1;
+  // QUESTÕES
+  if (questions >= 200) points += 8;
+  else if (questions >= 150)
+    points += 6;
+  else if (questions >= 100)
+    points += 4;
+  else if (questions >= 60)
+    points += 3;
+  else if (questions >= 30)
+    points += 2;
 
-  if (accuracy >= 90) points += 3;
-  else if (accuracy >= 80) points += 2;
-  else if (accuracy >= 70) points += 1;
+  // PRECISÃO
+  if (accuracy >= 95) points += 4;
+  else if (accuracy >= 90)
+    points += 3;
+  else if (accuracy >= 80)
+    points += 2;
+  else if (accuracy >= 70)
+    points += 1;
 
+  // PENALIDADE
   if (accuracy < 50) points -= 1;
 
   return Math.max(points, 0);
@@ -144,295 +173,637 @@ export function getDaysUntilExam() {
 }
 
 function getEntryDate(entry) {
-  if (!entry?.created_at) return null;
+  if (!entry?.created_at)
+    return null;
 
   try {
-    return format(parseISO(entry.created_at), 'yyyy-MM-dd');
+    return format(
+      new Date(entry.created_at),
+      'yyyy-MM-dd'
+    );
   } catch {
     return null;
   }
 }
 
-export function getPlayerStats(entries, participant) {
-  const playerEntries = entries.filter(
-    e => e.participant === participant
+function getMaxQuestionsInDay(
+  entries
+) {
+  const byDate = {};
+
+  entries.forEach(e => {
+    const date =
+      getEntryDate(e);
+
+    if (!date) return;
+
+    byDate[date] =
+      (byDate[date] || 0) +
+      (e.questions || 0);
+  });
+
+  return Math.max(
+    0,
+    ...Object.values(byDate)
+  );
+}
+
+export function getPlayerStats(
+  entries,
+  participant,
+  penalties = [],
+  freeDays = []
+) {
+
+  const playerEntries =
+    entries.filter(
+      e =>
+        e.participant ===
+        participant
+    );
+
+  const todayStr = format(
+    new Date(),
+    'yyyy-MM-dd'
   );
 
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const todayEntries =
+    playerEntries.filter(
+      e =>
+        getEntryDate(e) ===
+        todayStr
+    );
 
-  const todayEntries = playerEntries.filter(
-    e => getEntryDate(e) === today
-  );
+  // =====================
+  // BÁSICOS
+  // =====================
 
-  const totalPoints = playerEntries.reduce(
-    (sum, e) => sum + (e.points || 0),
-    0
-  );
+  const totalPoints =
+    playerEntries.reduce(
+      (sum, e) =>
+        sum + (e.points || 0),
+      0
+    );
 
-  const totalQuestions = playerEntries.reduce(
-    (sum, e) => sum + (e.questions || 0),
-    0
-  );
+  const totalQuestions =
+    playerEntries.reduce(
+      (sum, e) =>
+        sum +
+        (e.questions || 0),
+      0
+    );
 
   const avgAccuracy =
     playerEntries.length > 0
       ? Math.round(
           playerEntries.reduce(
-            (sum, e) => sum + (e.accuracy || 0),
+            (sum, e) =>
+              sum +
+              (e.accuracy || 0),
             0
-          ) / playerEntries.length
+          ) /
+            playerEntries.length
         )
       : 0;
 
-  const todayQuestions = todayEntries.reduce(
-    (sum, e) => sum + (e.questions || 0),
-    0
-  );
+  const todayQuestions =
+    todayEntries.reduce(
+      (sum, e) =>
+        sum +
+        (e.questions || 0),
+      0
+    );
 
   const todayAccuracy =
     todayEntries.length > 0
       ? Math.round(
           todayEntries.reduce(
-            (sum, e) => sum + (e.accuracy || 0),
+            (sum, e) =>
+              sum +
+              (e.accuracy || 0),
             0
-          ) / todayEntries.length
+          ) /
+            todayEntries.length
         )
       : 0;
 
-  const todayPoints = todayEntries.reduce(
-    (sum, e) => sum + (e.points || 0),
-    0
-  );
+  const todayPoints =
+    todayEntries.reduce(
+      (sum, e) =>
+        sum + (e.points || 0),
+      0
+    );
 
   const todaySubjects = [
     ...new Set(
-      todayEntries.map(e => e.subject).filter(Boolean)
+      todayEntries
+        .map(e => e.subject)
+        .filter(Boolean)
     ),
   ];
 
-  const metDailyGoal = todayQuestions >= DAILY_GOAL;
-  const studiedToday = todayEntries.length > 0;
+  const metDailyGoal =
+    todayQuestions >=
+    DAILY_GOAL;
 
-  // STREAK
-  const studyDates = [
+  const studiedToday =
+    todayEntries.length > 0;
+
+  const atRiskToday =
+    !metDailyGoal;
+
+  // =====================
+  // DIAS ESTUDADOS
+  // =====================
+
+  const studyDays = [
     ...new Set(
       playerEntries
         .map(getEntryDate)
         .filter(Boolean)
     ),
-  ].sort().reverse();
+  ];
+
+  const daysStudied =
+    studyDays.length;
+
+  const studyAveragePerDay =
+    daysStudied > 0
+      ? Math.round(
+          totalQuestions /
+            daysStudied
+        )
+      : 0;
+
+  // =====================
+  // FREE DAYS
+  // =====================
+
+  const participantFreeDays =
+    freeDays.filter(
+      d =>
+        d.participant ===
+        participant
+    );
+
+  const availableFreeDays =
+    participantFreeDays.filter(
+      d => !d.used
+    ).length;
+
+  const hasFreeDay =
+    availableFreeDays > 0;
+
+  // =====================
+  // STREAK
+  // =====================
 
   let streak = 0;
-  let checkDate = new Date();
 
-  for (let i = 0; i < 365; i++) {
-    const dateStr = format(checkDate, 'yyyy-MM-dd');
+  const studyDatesSet =
+    new Set(studyDays);
 
-    if (studyDates.includes(dateStr)) {
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-    } else if (i === 0) {
-      checkDate.setDate(checkDate.getDate() - 1);
+  const currentDate =
+    new Date();
+
+  for (
+    let i = 0;
+    i < 365;
+    i++
+  ) {
+    const check =
+      new Date(currentDate);
+
+    check.setDate(
+      currentDate.getDate() - i
+    );
+
+    const dateStr = format(
+      check,
+      'yyyy-MM-dd'
+    );
+
+    // DIA ATUAL
+    if (i === 0) {
+
+      const studiedToday =
+        studyDatesSet.has(
+          dateStr
+        );
+
+      const usedFreeDayToday =
+        participantFreeDays.find(
+          freeDay =>
+            freeDay.used &&
+            freeDay.used_date ===
+              dateStr
+        );
+
+      if (
+        studiedToday ||
+        usedFreeDayToday
+      ) {
+        streak++;
+      }
+
       continue;
-    } else {
-      break;
     }
+
+    // ESTUDOU
+    if (
+      studyDatesSet.has(
+        dateStr
+      )
+    ) {
+      streak++;
+      continue;
+    }
+
+    // FREE DAY
+    const usedFreeDay =
+      participantFreeDays.find(
+        freeDay =>
+          freeDay.used &&
+          freeDay.used_date ===
+            dateStr
+      );
+
+    if (usedFreeDay) {
+      streak++;
+      continue;
+    }
+
+    // QUEBRA
+    break;
   }
 
-  // WEEKLY
-  const weekStart = startOfWeek(new Date(), {
-    weekStartsOn: 1,
-  });
+  // =====================
+  // SEMANAL
+  // =====================
 
-  const weekEnd = endOfWeek(new Date(), {
-    weekStartsOn: 1,
-  });
+  const weekStart =
+    startOfWeek(
+      new Date(),
+      {
+        weekStartsOn: 1,
+      }
+    );
 
-  const weekEntries = playerEntries.filter(e => {
-    if (!e.created_at) return false;
+  const weekEnd =
+    endOfWeek(
+      new Date(),
+      {
+        weekStartsOn: 1,
+      }
+    );
 
-    try {
-      const d = parseISO(e.created_at);
+  const weekEntries =
+    playerEntries.filter(
+      e => {
+        if (!e.created_at)
+          return false;
 
-      return isWithinInterval(d, {
-        start: weekStart,
-        end: weekEnd,
-      });
-    } catch {
-      return false;
-    }
-  });
+        try {
+          const d = parseISO(
+            e.created_at
+          );
 
-  const weekQuestions = weekEntries.reduce(
-    (sum, e) => sum + (e.questions || 0),
-    0
-  );
+          return isWithinInterval(
+            d,
+            {
+              start:
+                weekStart,
+              end: weekEnd,
+            }
+          );
+        } catch {
+          return false;
+        }
+      }
+    );
 
-  const weeklyProgress = Math.min(
-    100,
-    Math.round((weekQuestions / WEEKLY_GOAL) * 100)
-  );
+  const weekQuestions =
+    weekEntries.reduce(
+      (sum, e) =>
+        sum +
+        (e.questions || 0),
+      0
+    );
 
-  const weeklyGoalMet = weekQuestions >= WEEKLY_GOAL;
+  const weeklyProgress =
+    Math.min(
+      100,
+      Math.round(
+        (weekQuestions /
+          WEEKLY_GOAL) *
+          100
+      )
+    );
 
-  const dailyProgress = Math.min(
-    100,
-    Math.round((todayQuestions / DAILY_GOAL) * 100)
-  );
+  const weeklyGoalMet =
+    weekQuestions >=
+    WEEKLY_GOAL;
 
+  const dailyProgress =
+    Math.min(
+      100,
+      Math.round(
+        (todayQuestions /
+          DAILY_GOAL) *
+          100
+      )
+    );
+
+  // =====================
   // MULTAS
-  const daysInChallenge = getDaysSinceStart();
+  // =====================
 
-  const daysStudied = new Set(
-    playerEntries
-      .map(getEntryDate)
-      .filter(Boolean)
-  ).size;
+  const participantPenalties =
+    penalties.filter(
+      p =>
+        p.participant ===
+        participant
+    );
 
-  const missedDays = Math.max(
-    0,
-    daysInChallenge - daysStudied
-  );
+  const fines =
+    participantPenalties.reduce(
+      (sum, p) =>
+        sum + (p.amount || 0),
+      0
+    );
 
-  const fines = missedDays * 5;
+  // =====================
+  // CHALLENGE
+  // =====================
 
-  // DIA LIVRE
-  const freeDaysEarned = weeklyGoalMet ? 1 : 0;
+  const challengeProgress =
+    Math.min(
+      100,
+      Math.round(
+        (getDaysSinceStart() /
+          differenceInCalendarDays(
+            parseISO(
+              EXAM_DATE
+            ),
+            parseISO(
+              CHALLENGE_START
+            )
+          )) *
+          100
+      )
+    );
 
-  const level = getLevel(totalPoints);
+  const currentFund =
+    INITIAL_FUND - fines;
+
+  // =====================
+  // LEVEL
+  // =====================
+
+  const level =
+    getLevel(totalPoints);
 
   return {
     totalPoints,
     totalQuestions,
     avgAccuracy,
+
     streak,
+
     todayQuestions,
     todayAccuracy,
     todayPoints,
     todaySubjects,
+
     metDailyGoal,
     studiedToday,
+    atRiskToday,
+
     weeklyProgress,
     weekQuestions,
-    dailyProgress,
     weeklyGoalMet,
-    freeDaysEarned,
+
+    dailyProgress,
+
+    daysStudied,
+    studyAveragePerDay,
+
     fines,
-    entriesCount: playerEntries.length,
+
+    availableFreeDays,
+    hasFreeDay,
+
+    challengeProgress,
+    currentFund,
+
+    entriesCount:
+      playerEntries.length,
+
     level,
   };
 }
 
-function getMaxQuestionsInDay(entries) {
-  const byDate = {};
-
-  entries.forEach(e => {
-    const date = getEntryDate(e);
-
-    if (!date) return;
-
-    byDate[date] =
-      (byDate[date] || 0) + (e.questions || 0);
-  });
-
-  return Math.max(0, ...Object.values(byDate));
-}
-
-export function getAchievements(entries, participant) {
-  const playerEntries = entries.filter(
-    e => e.participant === participant
-  );
-
-  const stats = getPlayerStats(entries, participant);
-
-  const maxQuestionsInDay =
-    getMaxQuestionsInDay(playerEntries);
+export function getAchievements(
+  player
+) {
 
   return [
     {
       icon: '🔥',
-      label: '7 dias seguidos',
-      unlocked: stats.streak >= 7,
+      label:
+        '7 dias seguidos',
+      unlocked:
+        player.streak >= 7,
     },
-    {
-      icon: '🏅',
-      label: '1000 questões',
-      unlocked: stats.totalQuestions >= 1000,
-    },
+
     {
       icon: '⚡',
-      label: '100 questões em um dia',
-      unlocked: maxQuestionsInDay >= 100,
+      label:
+        '30 dias seguidos',
+      unlocked:
+        player.streak >= 30,
     },
+
     {
-      icon: '🎯',
-      label: 'Precisão 80%+',
-      unlocked: stats.avgAccuracy >= 80,
+      icon: '🏅',
+      label:
+        '1000 questões',
+      unlocked:
+        player.totalQuestions >=
+        1000,
     },
+
     {
       icon: '🚀',
-      label: 'Meta semanal',
-      unlocked: stats.weeklyGoalMet,
+      label:
+        '5000 questões',
+      unlocked:
+        player.totalQuestions >=
+        5000,
+    },
+
+    {
+      icon: '🎯',
+      label:
+        'Precisão 80%+',
+      unlocked:
+        player.avgAccuracy >=
+        80,
+    },
+
+    {
+      icon: '🧠',
+      label:
+        'Precisão 90%+',
+      unlocked:
+        player.avgAccuracy >=
+        90,
+    },
+
+    {
+      icon: '🚀',
+      label:
+        'Meta semanal',
+      unlocked:
+        player.weeklyGoalMet,
+    },
+
+    {
+      icon: '🛌',
+      label:
+        'Primeiro dia livre',
+      unlocked:
+        player.availableFreeDays >=
+        1,
+    },
+
+    {
+      icon: '💸',
+      label:
+        'Sem multas',
+      unlocked:
+        player.fines === 0,
     },
   ];
 }
 
-export function getRanking(entries) {
-  return PARTICIPANTS.map(name => ({
-    name,
-    ...getPlayerStats(entries, name),
-  })).sort(
+export function getRanking(
+  entries,
+  penalties = [],
+  freeDays = []
+) {
+
+  const ranking =
+    PARTICIPANTS.map(
+      name => ({
+        name,
+        ...getPlayerStats(
+          entries,
+          name,
+          penalties,
+          freeDays
+        ),
+      })
+    );
+
+  ranking.sort(
     (a, b) =>
-      b.totalPoints - a.totalPoints ||
-      b.totalQuestions - a.totalQuestions
+      b.totalPoints -
+        a.totalPoints ||
+      b.streak -
+        a.streak ||
+      b.totalQuestions -
+        a.totalQuestions
   );
+
+  ranking.forEach(
+    (player, index) => {
+      player.position =
+        index + 1;
+
+      player.isLeader =
+        player.position === 1;
+
+      player.isLast =
+        player.position ===
+        ranking.length;
+    }
+  );
+console.log({
+  penalties,
+  freeDays,
+  ranking,
+});
+  return ranking;
 }
 
-export function generateActivityFeed(entries) {
-  const sorted = [...entries].sort(
+export function generateActivityFeed(
+  entries
+) {
+
+  const sorted = [
+    ...entries,
+  ].sort(
     (a, b) =>
-      new Date(b.created_at) -
+      new Date(
+        b.created_at
+      ) -
       new Date(a.created_at)
   );
 
-  return sorted.slice(0, 20).map(entry => {
-    const pts = entry.points || 0;
+  return sorted
+    .slice(0, 20)
+    .map(entry => {
 
-    let icon = '📖';
-    let highlight = false;
+      const pts =
+        entry.points || 0;
 
-    if (pts >= 8) {
-      icon = '🔥';
-      highlight = true;
-    } else if (pts >= 5) {
-      icon = '⚡';
-      highlight = true;
-    } else if (entry.questions >= 100) {
-      icon = '🚀';
-      highlight = true;
-    } else if (entry.accuracy >= 90) {
-      icon = '🎯';
-    }
+      let icon = '📚';
 
-    return {
-      id: entry.id,
-      participant: entry.participant,
-      text:
-        entry.participant +
-        ' fez ' +
-        entry.questions +
-        ' questões em ' +
-        entry.subject +
-        ' (' +
-        entry.accuracy +
-        '% acertos) → +' +
-        pts +
-        ' pts',
+      let highlight = false;
 
-      icon,
-      highlight,
-      date: entry.created_at,
-      points: pts,
-    };
-  });
+      if (pts >= 8) {
+        icon = '🔥';
+        highlight = true;
+      } else if (pts >= 5) {
+        icon = '⚡';
+        highlight = true;
+      } else if (
+        entry.questions >= 100
+      ) {
+        icon = '🚀';
+        highlight = true;
+      } else if (
+        entry.questions >= 60
+      ) {
+        icon = '💪';
+      } else if (
+        entry.accuracy >= 90
+      ) {
+        icon = '🎯';
+      }
+
+      return {
+        id: entry.id,
+
+        participant:
+          entry.participant,
+
+        text:
+          `${entry.participant} fez ${entry.questions} questões em ${
+            entry.subject ||
+            'Matéria'
+          } com ${
+            entry.accuracy
+          }% de acertos e ganhou +${pts} pts`,
+
+        icon,
+        highlight,
+
+        date:
+          entry.created_at,
+
+        points: pts,
+      };
+    });
 }
