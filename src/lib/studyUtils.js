@@ -14,9 +14,14 @@ export const PARTICIPANTS = [
 ];
 
 export const AVATARS = {
-  Eduardo: '🦁',
-  Isabela: '🐯',
-  Luiza: '🦊',
+  Eduardo:
+    'from-blue-600 to-cyan-500',
+
+  Isabela:
+    'from-rose-500 to-pink-500',
+
+  Luiza:
+    'from-violet-500 to-fuchsia-500',
 };
 
 export const CHALLENGE_START =

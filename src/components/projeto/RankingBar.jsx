@@ -49,7 +49,26 @@ export default function RankingBar({ ranking }) {
                 {/* Medal + Avatar */}
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-2xl">{medals[index]}</span>
-                  <div className={`text-3xl ${isLeader ? 'drop-shadow-lg' : ''}`}>{AVATARS[player.name]}</div>
+                  <div
+                    className={`
+                      w-12 h-12 rounded-xl
+                      bg-gradient-to-br
+                      ${AVATARS[player.name]}
+                      flex items-center
+                      justify-center
+                      text-white
+                      font-black
+                      text-lg
+                      shrink-0
+                      ${
+                        isLeader
+                          ? 'drop-shadow-lg'
+                          : ''
+                      }
+                    `}
+                  >
+                    {player.name[0]}
+                  </div>
                 </div>
 
                 {/* Info */}

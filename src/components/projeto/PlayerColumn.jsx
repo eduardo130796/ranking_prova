@@ -49,8 +49,25 @@ export default function PlayerColumn({
       <div className={`p-5 ${isLeader ? 'bg-gradient-to-br from-yellow-500/10 via-transparent to-transparent' : ''}`}>
         <div className="flex items-start gap-3">
           {/* Avatar */}
-          <div className={`text-5xl leading-none ${isLeader ? 'drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]' : ''}`}>
-            {AVATARS[participant]}
+          <div
+            className={`
+              w-14 h-14 rounded-2xl
+              bg-gradient-to-br
+              ${AVATARS[participant]}
+              flex items-center
+              justify-center
+              text-white
+              font-black
+              text-2xl
+              shrink-0
+              ${
+                isLeader
+                  ? 'drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+                  : ''
+              }
+            `}
+          >
+            {participant[0]}
           </div>
 
           <div className="flex-1 min-w-0">
