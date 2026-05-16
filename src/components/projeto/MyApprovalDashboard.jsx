@@ -27,7 +27,7 @@ export default function MyApprovalDashboard({
         topics: []
       };
     }
-    
+
     acc[subjectName].topics.push({
       id: topic.id,
       name: topic.name,
@@ -35,7 +35,7 @@ export default function MyApprovalDashboard({
       questionsCount: topic.total_questions || 0,
       accuracy: Math.floor(Math.random() * 40) + 60 // Mock accuracy
     });
-    
+
     return acc;
   }, {});
 
@@ -80,13 +80,13 @@ export default function MyApprovalDashboard({
   const editalProgress = subjects.length > 0 ? Math.round((completedTopics / subjects.length) * 100) : 0;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="space-y-12"
     >
       {/* 1. HERO SECTION */}
-      <PremiumHero 
+      <PremiumHero
         editalProgress={editalProgress}
         pendingReviews={reviews.filter(r => !r.completed).length}
         totalQuestions={totalQuestions}
@@ -99,7 +99,7 @@ export default function MyApprovalDashboard({
         <div className="lg:col-span-8 space-y-12">
           {/* DAILY FOCUS */}
           <DailyFocus tasks={dailyTasks} />
-          
+
           {/* SYLLABUS TREE */}
           <SyllabusTree subjects={subjectList} />
         </div>
@@ -108,10 +108,10 @@ export default function MyApprovalDashboard({
         <div className="lg:col-span-4 space-y-8">
           {/* ACTIVITY HEATMAP */}
           <ActivityHeatmap />
-          
+
           {/* CRITICAL SUBJECTS */}
           <CriticalSubjects subjects={criticalList} />
-          
+
           {/* MINI GAMIFICATION PREVIEW */}
           <div className="p-8 rounded-[2rem] glass-card space-y-4">
             <h3 className="font-black text-lg text-white">Milestones</h3>
@@ -135,5 +135,5 @@ export default function MyApprovalDashboard({
         </div>
       </div>
     </motion.div>
-  );
+  )
 }

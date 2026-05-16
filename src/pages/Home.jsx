@@ -4,6 +4,7 @@ import {
   getRanking,
   getAchievements,
 } from '@/lib/studyUtils';
+import { motion } from 'framer-motion';
 
 import MyApprovalDashboard from '@/components/projeto/MyApprovalDashboard';
 
@@ -210,42 +211,40 @@ export default function Home() {
   console.log('RANKING:', ranking);
 
   const completedTopics =
-  topics.filter(
-    topic => topic.completed
-  ).length;
+    topics.filter(
+      topic => topic.completed
+    ).length;
 
   const editalProgress =
     topics.length > 0
       ? Math.round(
-          (completedTopics /
-            topics.length) * 100
-        )
+        (completedTopics /
+          topics.length) * 100
+      )
       : 0;
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 space-y-12">
-        
+
         {/* PREMIUM VIEW TOGGLE */}
         <div className="flex justify-center">
           <div className="inline-flex p-1.5 rounded-[2rem] bg-white/[0.03] border border-white/10 backdrop-blur-xl premium-shadow">
             <button
               onClick={() => setActiveView('group')}
-              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${
-                activeView === 'group'
+              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${activeView === 'group'
                   ? 'bg-white text-black shadow-xl scale-105'
                   : 'text-white/40 hover:text-white/60'
-              }`}
+                }`}
             >
               <span className="text-lg">🔥</span>
               Grupo
             </button>
             <button
               onClick={() => setActiveView('approval')}
-              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${
-                activeView === 'approval'
+              className={`flex items-center gap-2 px-8 py-3 rounded-[1.5rem] transition-all duration-500 font-bold text-sm ${activeView === 'approval'
                   ? 'bg-white text-black shadow-xl scale-105'
                   : 'text-white/40 hover:text-white/60'
-              }`}
+                }`}
             >
               <span className="text-lg">📚</span>
               Minha Aprovação
@@ -257,7 +256,7 @@ export default function Home() {
         {/* VIEW: GRUPO */}
         {/* ========================= */}
         {activeView === 'group' && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
@@ -308,5 +307,6 @@ export default function Home() {
         )}
       </div>
     </div>
+
   );
 }
